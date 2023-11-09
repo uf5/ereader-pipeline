@@ -4,6 +4,7 @@ import img2pdf
 import argparse
 import zipfile as zf
 import tempfile as tf
+from multiprocessing import Pool
 
 
 if __name__ == "__main__":
@@ -27,7 +28,8 @@ if __name__ == "__main__":
         # downscale
         with tf.TemporaryDirectory() as dir_downscaled:
             dir_downscaled_p = Path(dir_downscaled)
-            for page in filter(Path.is_file, Path(dir_scans).iterdir()):
+
+            def downscale_image(page):
                 downscaled_path = dir_downscaled_p / page.name
                 print(f"processing: {page.name}")
                 img = Image.open(page)
@@ -36,6 +38,10 @@ if __name__ == "__main__":
                     Image.Resampling.LANCZOS,
                 )
                 img.save(downscaled_path, img.format)
+
+            pool = Pool()
+            pool.map(downscale_image, filter(Path.is_file, Path(dir_scans).iterdir()))
+
             print("downscaling complete")
             # combine images into pdf
             with open(output_file, "wb") as f:
